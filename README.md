@@ -1,5 +1,7 @@
 # Kompositor
 
+[![Build Status](https://travis-ci.org/kompositor/kompositor.svg?branch=master)](https://travis-ci.org/kompositor/kompositor)
+
 A project templating/bootstrapping engine
 
 Project goal: ~~закрыть ППО~~ instead of focusing on various project "archetypes" or "categories", like
