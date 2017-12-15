@@ -27,7 +27,9 @@ dependencies {
     compile "com.samskivert:jmustache:1.14"
 
     compile "com.github.kittinunf.fuel:fuel:$fuel_version"
-    compile "com.github.kittinunf.fuel:fuel-gson:$fuel_version"
+    compile "com.github.kittinunf.fuel:fuel-jackson:$fuel_version"
+
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.3"
 
     testCompile "junit:junit:4.12"
 }
