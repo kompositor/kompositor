@@ -13,9 +13,9 @@ val jacksonLayer = """
 
 val gradleKotlinTemplate = """buildscript {
     ext.kotlin_version = '{{kotlin.version}}'
-    {{#gradle-ext-block}}
+    {{#layer:gradle-ext-block}}
     {{.}}
-    {{/gradle-ext-block}}
+    {{/layer:gradle-ext-block}}
 
     repositories {
         jcenter()
@@ -23,9 +23,9 @@ val gradleKotlinTemplate = """buildscript {
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${"$"}kotlin_version"
-        {{#gradle-build-dependencies}}
+        {{#layer:gradle-build-dependencies}}
         {{.}}
-        {{/gradle-build-dependencies}}
+        {{/layer:gradle-build-dependencies}}
     }
 }
 
@@ -34,8 +34,8 @@ apply plugin: 'kotlin'
 dependencies {
         compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${"$"}kotlin_version"
 
-        {{#gradle-dependencies}}
+        {{#layer:gradle-dependencies}}
         {{.}}
-        {{/gradle-dependencies}}
+        {{/layer:gradle-dependencies}}
 }
 """

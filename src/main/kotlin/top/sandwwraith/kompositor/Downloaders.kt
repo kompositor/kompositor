@@ -1,9 +1,11 @@
 package top.sandwwraith.kompositor
 
-import com.github.kittinunf.fuel.core.FuelError
 import com.github.kittinunf.fuel.core.ResponseDeserializable
 import com.github.kittinunf.fuel.httpGet
 import com.github.kittinunf.fuel.jackson.jacksonDeserializerOf
+import com.github.kittinunf.result.Result
+import com.github.kittinunf.result.flatMap
+import com.github.kittinunf.result.map
 import java.io.Reader
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -20,7 +22,7 @@ open class AbstractGitHubContentDownloader(repoPath: String) {
     protected fun <T : Any> load(url: String, deserializer: ResponseDeserializable<T>, handler: (T) -> Unit) {
         phaser.register()
         url.httpGet().responseObject(deserializer) { _, _, result ->
-            result.fold(handler, ::errorCollector)
+            result.flatMap { v -> Result.of { handler(v) } }.fold({}, ::errorCollector)
             phaser.arriveAndDeregister()
         }
     }
@@ -29,15 +31,24 @@ open class AbstractGitHubContentDownloader(repoPath: String) {
         phaser = Phaser(1)
     }
 
-    open fun await() {
+    open fun await(): Result<Unit, CompositeException> {
         phaser.arriveAndAwaitAdvance()
+        return toResult(Unit)
     }
 
-    protected fun errorCollector(e: FuelError) {
-        System.err.println(e.exception) //todo
+    private var errors: MutableList<Exception> = arrayListOf()
+
+    protected fun <T : Any> toResult(value: T): Result<T, CompositeException> {
+        return if (errors.isNotEmpty()) Result.error(CompositeException(errors))
+        else Result.Success(value)
     }
 
+    protected fun errorCollector(e: Exception) {
+        errors.add(e)
+    }
 }
+
+class CompositeException(val errors: List<Exception>) : Exception()
 
 internal fun makeAbsoluteSavePath(basePath: Path, gitHubPath: Path): Path {
     return basePath.resolve(gitHubPath.subpath(1, gitHubPath.nameCount))
@@ -94,7 +105,7 @@ class LayerDownloader(
         layerNames.forEach(::loadLayer)
     }
 
-    fun getLayers(): Map<String, Layer> = await().run { resultMap }
+    fun getLayers(): Result<Map<String, Layer>, CompositeException> = await().map { resultMap }
 
     private inner class LayerReader(val layerName: String) : ResponseDeserializable<Unit> {
         override fun deserialize(reader: Reader): Unit? {
