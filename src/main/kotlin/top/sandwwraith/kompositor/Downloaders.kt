@@ -29,7 +29,7 @@ open class AbstractGitHubContentDownloader(repoPath: String) {
         phaser = Phaser(1)
     }
 
-    open fun stop() {
+    open fun await() {
         phaser.arriveAndAwaitAdvance()
     }
 
@@ -94,7 +94,7 @@ class LayerDownloader(
         layerNames.forEach(::loadLayer)
     }
 
-    fun getLayers(): Map<String, Layer> = stop().run { resultMap }
+    fun getLayers(): Map<String, Layer> = await().run { resultMap }
 
     private inner class LayerReader(val layerName: String) : ResponseDeserializable<Unit> {
         override fun deserialize(reader: Reader): Unit? {
