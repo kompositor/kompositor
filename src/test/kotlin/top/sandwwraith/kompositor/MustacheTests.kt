@@ -9,8 +9,8 @@ class MustacheTests {
     @Test
     fun convertsNormally() {
         val converter = MustacheConverter()
-        val data = mapOf("x" to "y")
-        val input = StringReader("Value: {{x}}")
+        val data = mapOf("layer:x" to "y")
+        val input = StringReader("Value: {{layer:x}}")
         val output = StringWriter()
         converter.converter(data).invoke(input, output.buffered())
         assertEquals("Value: y", output.toString())
@@ -18,13 +18,14 @@ class MustacheTests {
 
     @Test
     fun complexProcessingTest() {
-        val layers = mergeLayers(listOf(
+        val layers = listOf(
                 parseYamlLayer(StringReader(junitLayer)),
                 parseYamlLayer(StringReader(jacksonLayer))
-        ))
+        )
         val userSettings = mapOf("kotlin.version" to "1.2.10")
         val output = StringWriter()
-        MustacheConverter().converter(layers + userSettings).invoke(StringReader(gradleKotlinTemplate), output.buffered())
+        val data = createMapForMustache(userSettings, layers, errorIfNotSpecified = true)
+        MustacheConverter().converter(data).invoke(StringReader(gradleKotlinTemplate), output.buffered())
         output.close()
         assertEquals(expectedInComplex, output.toString())
     }
