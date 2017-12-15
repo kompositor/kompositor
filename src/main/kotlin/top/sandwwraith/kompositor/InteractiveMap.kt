@@ -29,7 +29,7 @@ fun createMapForMustache(userSettings: Map<String, String>, layers: List<Layer>,
 private val readLock = Object()
 fun askUserForKey(key: String): String {
     synchronized(readLock) {
-        print("Enter the value for $key: ")
+        print("Enter value for $key: ")
         val s = readLine() ?: throw IOException("Unexpected EOF")
         return s.trim()
     }

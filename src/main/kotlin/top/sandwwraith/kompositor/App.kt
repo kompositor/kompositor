@@ -40,14 +40,15 @@ fun main(args: Array<String>) {
     // pulled layers and user settings, getLayers() await all parallel downloads
     val userSettings = mapOf("kotlin.version" to ("1.2.10"))
     val layers = l.getLayers().fold({ it }, { reportAndBail("pulling requested layers", it) })
-    val data = createMapForMustache(userSettings, layers.values.toList(), true)
+    val data = createMapForMustache(userSettings, layers.values.toList())
     // Mustache converter with data
     val converter = MustacheConverter().converter(data)
     // download and execute main template to 'tmp' folder in current dir
-    val d = TemplateDownloader(toFileConsumer(converter), Paths.get("tmp")).apply { start() }
+    val outDir = Paths.get("tmp")
+    val d = TemplateDownloader(toFileConsumer(converter), outDir).apply { start() }
     //await all async operations
     d.await().fold({ }, { reportAndBail("instantiating a template", it) })
     // shutdown threadpool so we don't need to wait idle time for threads to die
     FuelManager.instance.executor.shutdown()
-    println("OK")
+    println("OK, content written to ${outDir.toAbsolutePath()}")
 }

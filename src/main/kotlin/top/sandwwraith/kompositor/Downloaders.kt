@@ -14,7 +14,7 @@ import java.util.concurrent.Phaser
 
 private const val BASE_API_PATH = "https://api.github.com/repos/"
 
-open class AbstractGitHubContentDownloader(repoPath: String) {
+open class AbstractGitHubContentDownloader(val repoPath: String) {
     val contentUrl = "$BASE_API_PATH$repoPath/contents"
 
     protected lateinit var phaser: Phaser
@@ -77,6 +77,7 @@ class TemplateDownloader(
 
     override fun start() {
         super.start()
+        println("Resolving template $templateName from $repoPath")
         loadFolder("$contentUrl/$templateName")
     }
 
@@ -102,6 +103,7 @@ class LayerDownloader(
 
     override fun start() {
         super.start()
+        println("Pulling layers $layerNames from $repoPath")
         layerNames.forEach(::loadLayer)
     }
 
