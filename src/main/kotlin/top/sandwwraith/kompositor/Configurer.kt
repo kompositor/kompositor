@@ -3,6 +3,8 @@ package top.sandwwraith.kompositor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import joptsimple.OptionSpec
+import java.nio.file.Path
+import java.nio.file.Paths
 
 /**
  * Utikeev Stanislav
@@ -12,12 +14,12 @@ import joptsimple.OptionSpec
 class Configurer {
 
     private val parser = OptionParser()
-    private val createSpec: OptionSpec<String>
-    private val withSpec: OptionSpec<String>
-    private val nameSpec: OptionSpec<String>
-    private val outdirSpec: OptionSpec<String>
-    private val configSpec: OptionSpec<String>
-    private val varSpec: OptionSpec<String>
+    val createSpec: OptionSpec<String>
+    val withSpec: OptionSpec<String>
+    val nameSpec: OptionSpec<String>
+    val outdirSpec: OptionSpec<String>
+    val configSpec: OptionSpec<String>
+    val varSpec: OptionSpec<String>
 
     init {
         parser.recognizeAlternativeLongOptions(true)
@@ -54,6 +56,28 @@ data class CommandLineOptions(
         val projectName: String,
         val template: String,
         val layers: List<String>,
-        val outdir: String,
+        val outdir: Path,
         val variables: Map<String, String>,
-        val config: String?)
+        val config: Path?) {
+
+    companion object {
+        fun create(args: Array<String>) : CommandLineOptions {
+            val configurer = Configurer()
+            val opts = configurer.parseOptions(args)
+            val projectName = configurer.nameSpec.value(opts)
+            val template = configurer.createSpec.value(opts)
+            val layers = if (opts.has(configurer.withSpec)) configurer.withSpec.values(opts) else emptyList()
+            val outdir =
+                    Paths.get(
+                            if (opts.has(configurer.outdirSpec))
+                                configurer.outdirSpec.value(opts)
+                            else
+                                projectName)
+            val variables = if (opts.has(configurer.varSpec)) configurer.getVariables(opts) else emptyMap()
+            val config = if (opts.has(configurer.configSpec)) Paths.get(configurer.configSpec.value(opts)) else null
+
+            return CommandLineOptions(projectName, template, layers, outdir, variables, config)
+        }
+    }
+
+}
