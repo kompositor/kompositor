@@ -1,11 +1,11 @@
 package top.sandwwraith.kompositor
 
 import com.github.kittinunf.fuel.core.FuelManager
+import joptsimple.OptionException
 import java.io.BufferedWriter
 import java.io.Reader
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import kotlin.system.exitProcess
 
 fun toFileConsumer(converter: (Reader, BufferedWriter) -> Unit): (Reader, Path) -> Unit = { reader, outPath ->
@@ -34,21 +34,35 @@ private fun reportAndBail(where: String, err: CompositeException): Nothing {
     exitProcess(-1)
 }
 
-fun main(args: Array<String>) {
-    // download layers
-    val l = LayerDownloader(listOf("jackson-kotlin", "junit"), ::parseYamlLayer).apply { start() }
+fun create(args: CommandLineOptions) {
+    val userSettings = composeConfig(args).let {
+        if ("artifact" !in it) it + ("artifact" to args.projectName) else it
+    }
+    println("Started creating a project ${args.projectName}")
+
+    val l = LayerDownloader(args.layers, ::parseYamlLayer).apply { start() }
     // pulled layers and user settings, getLayers() await all parallel downloads
-    val userSettings = mapOf("kotlin.version" to ("1.2.10"))
     val layers = l.getLayers().fold({ it }, { reportAndBail("pulling requested layers", it) })
     val data = createMapForMustache(userSettings, layers.values.toList())
-    // Mustache converter with data
+
     val converter = MustacheConverter().converter(data)
-    // download and execute main template to 'tmp' folder in current dir
-    val outDir = Paths.get("tmp")
+    // download and execute main template
+    val outDir = args.outdir
     val d = TemplateDownloader(toFileConsumer(converter), outDir).apply { start() }
-    //await all async operations
     d.await().fold({ }, { reportAndBail("instantiating a template", it) })
     // shutdown threadpool so we don't need to wait idle time for threads to die
     FuelManager.instance.executor.shutdown()
     println("OK, content written to ${outDir.toAbsolutePath()}")
+}
+
+fun main(args: Array<String>) {
+    @Suppress("NAME_SHADOWING")
+    val args = try {
+        CommandLineOptions.create(args)
+    } catch (e: OptionException) {
+        println("Error occurred during option parsing (${e.message}).${System.lineSeparator()}" +
+                "If you need some help, use -h or -?")
+        exitProcess(-2)
+    }
+    create(args)
 }
