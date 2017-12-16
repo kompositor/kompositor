@@ -6,11 +6,6 @@ import joptsimple.OptionSpec
 import java.nio.file.Path
 import java.nio.file.Paths
 
-/**
- * Utikeev Stanislav
- * utikeev@gmail.com
- * 15.12.2017
- */
 class Configurer {
 
     private val parser = OptionParser()
@@ -20,28 +15,55 @@ class Configurer {
     val outdirSpec: OptionSpec<String>
     val configSpec: OptionSpec<String>
     val varSpec: OptionSpec<String>
+    val layersSpec: OptionSpec<Void>
+    val templatesSpec: OptionSpec<Void>
+    val helpSpec: OptionSpec<Void>
 
     init {
         parser.recognizeAlternativeLongOptions(true)
         parser.allowsUnrecognizedOptions()
-        createSpec = parser.accepts("create").withRequiredArg().required()
-        withSpec = parser.accepts("with").withRequiredArg().withValuesSeparatedBy(',')
-        nameSpec = parser.accepts("called").withRequiredArg().required()
-        outdirSpec = parser.accepts("outdir").withRequiredArg()
-        configSpec = parser.accepts("c").withRequiredArg()
-        varSpec = parser.accepts("V").withRequiredArg()
+        createSpec = parser.accepts("create", "Template name. Can be used without double hyphen.")
+                .withRequiredArg()
+                .required()
+
+        withSpec = parser.accepts("with", "Layers separated with comma and no whitespaces. Can be used without double hyphen.")
+                .withRequiredArg()
+                .describedAs("layer1,layer2,layer3")
+                .withValuesSeparatedBy(',')
+
+        nameSpec = parser.accepts("called", "Name of the project. Can be used without double hyphen.")
+                .withRequiredArg()
+                .required()
+
+        outdirSpec = parser.accepts("outdir", "Output directory")
+                .withRequiredArg()
+                .defaultsTo("Project name")
+
+        configSpec = parser.accepts("c", "Path to config")
+                .withRequiredArg()
+
+        varSpec = parser.accepts("V", "Optional variables starting with capital V. For example: -Vkotlin.version=1.2.10")
+                .withRequiredArg()
+
+        layersSpec = parser.accepts("layers", "List of available layers")
+
+        templatesSpec = parser.accepts("templates", "List of available templates")
+
+        helpSpec = parser.acceptsAll(listOf("h", "?", "help"), "Show help")
+                .forHelp()
     }
 
     fun parseOptions(options: Array<String>): OptionSet {
         val mOptions = options.toMutableList()
 
-        mOptions.add(mOptions.indexOf("create"), "-W")
+        val createInd = mOptions.indexOf("create")
+        if (createInd != -1) mOptions.add(createInd, "-W")
         val withInd = mOptions.indexOf("with")
         if (withInd != -1) mOptions.add(withInd, "-W")
         val calledInd = mOptions.indexOf("called")
         if (calledInd != -1) mOptions.add(calledInd, "-W")
 
-        return parser.parse("-W", *mOptions.toTypedArray())
+        return parser.parse(*mOptions.toTypedArray())
     }
 
     fun getVariables(optionSet: OptionSet): Map<String, String> {
@@ -50,20 +72,27 @@ class Configurer {
             lst[0] to lst.drop(1).joinToString("=")
         }.toMap()
     }
+
+    fun printHelp() {
+        parser.printHelpOn(System.out)
+    }
 }
 
-data class CommandLineOptions(
-        val projectName: String,
-        val template: String,
-        val layers: List<String>,
-        val outdir: Path,
-        val variables: Map<String, String>,
-        val config: Path?) {
-
+sealed class ParsedOption {
     companion object {
-        fun create(args: Array<String>) : CommandLineOptions {
+        fun create(args: Array<String>) : ParsedOption {
             val configurer = Configurer()
             val opts = configurer.parseOptions(args)
+
+            if (opts.has(configurer.helpSpec))
+                return HelpOptions()
+
+            if (opts.has(configurer.layersSpec))
+                return LayersOptions()
+
+            if (opts.has(configurer.templatesSpec))
+                return TemplateOptions()
+
             val projectName = configurer.nameSpec.value(opts)
             val template = configurer.createSpec.value(opts)
             val layers = if (opts.has(configurer.withSpec)) configurer.withSpec.values(opts) else emptyList()
@@ -79,5 +108,23 @@ data class CommandLineOptions(
             return CommandLineOptions(projectName, template, layers, outdir, variables, config)
         }
     }
-
 }
+
+class HelpOptions : ParsedOption() {
+    fun printHelp() {
+        val configurer = Configurer()
+        configurer.printHelp()
+    }
+}
+
+class LayersOptions : ParsedOption()
+
+class TemplateOptions : ParsedOption()
+
+data class CommandLineOptions(
+        val projectName: String,
+        val template: String,
+        val layers: List<String>,
+        val outdir: Path,
+        val variables: Map<String, String>,
+        val config: Path?) : ParsedOption()

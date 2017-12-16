@@ -49,7 +49,7 @@ class ConfigurerTest {
     @Test
     fun commandLineOptionsEasyTest() {
         val str = arrayOf("create", "kotlin-gradle", "with", "JSON,junit", "--outdir=tmp", "-Vkotlin.version=1.2.10", "called", "Test")
-        val clOptions = CommandLineOptions.create(str)
+        val clOptions = ParsedOption.create(str) as CommandLineOptions
         assertEquals("kotlin-gradle", clOptions.template)
         assertEquals(listOf("JSON", "junit"), clOptions.layers)
         assertEquals("Test", clOptions.projectName)
@@ -61,7 +61,7 @@ class ConfigurerTest {
     @Test
     fun commandLineOptionsDefaultFolderTest() {
         val str = arrayOf("create", "kotlin-gradle", "called", "Test Project for IFMO")
-        val clOptions = CommandLineOptions.create(str)
+        val clOptions = ParsedOption.create(str) as CommandLineOptions
         assertEquals(Paths.get("Test Project for IFMO"), clOptions.outdir)
     }
 }
