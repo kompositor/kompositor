@@ -77,7 +77,7 @@ class Configurer {
     }
 }
 
-class BadOptionsException : OptionException(listOf(""))
+class MissedProjectOrTemplateNameException : OptionException(listOf(""))
 
 sealed class ParsedOption {
     companion object {
@@ -95,7 +95,7 @@ sealed class ParsedOption {
                 return TemplatesOptions()
 
             if (!(opts.has(configurer.nameSpec) && opts.has(configurer.createSpec)))
-                throw BadOptionsException()
+                throw MissedProjectOrTemplateNameException()
 
             val projectName = configurer.nameSpec.value(opts)
             val template = configurer.createSpec.value(opts)
