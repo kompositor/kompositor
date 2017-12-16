@@ -20,7 +20,7 @@ fun mergeLayers(layers: List<Layer>): Layer {
     val ans: MutableMap<String, List<String>> = hashMapOf()
     layers.forEach { layer ->
         layer.forEach { k, v ->
-            ans.merge(k, v, { l1, l2 -> l1 + l2 })
+            ans.merge(k, v, { l1, l2 -> (l1 + l2.map { it.trim() }).distinct() })
         }
     }
     return ans
