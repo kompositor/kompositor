@@ -91,7 +91,7 @@ sealed class ParsedOption {
                 return LayersOptions()
 
             if (opts.has(configurer.templatesSpec))
-                return TemplateOptions()
+                return TemplatesOptions()
 
             val projectName = configurer.nameSpec.value(opts)
             val template = configurer.createSpec.value(opts)
@@ -119,7 +119,7 @@ class HelpOptions : ParsedOption() {
 
 class LayersOptions : ParsedOption()
 
-class TemplateOptions : ParsedOption()
+class TemplatesOptions : ParsedOption()
 
 data class CommandLineOptions(
         val projectName: String,

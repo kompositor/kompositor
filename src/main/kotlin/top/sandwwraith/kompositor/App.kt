@@ -50,19 +50,31 @@ fun create(args: CommandLineOptions) {
     val outDir = args.outdir
     val d = TemplateDownloader(toFileConsumer(converter), outDir).apply { start() }
     d.await().fold({ }, { reportAndBail("instantiating a template", it) })
-    // shutdown threadpool so we don't need to wait idle time for threads to die
-    FuelManager.instance.executor.shutdown()
     println("OK, content written to ${outDir.toAbsolutePath()}")
+}
+
+fun browse(browser: AbstractBrowserDownloader, name: String) {
+    browser.start()
+    val res = browser.getResult().fold({ it }, { reportAndBail("browsing $name", it) })
+    println("Following $name available in ${browser.repoPath}:")
+    println(res.joinToString(System.lineSeparator()))
 }
 
 fun main(args: Array<String>) {
     @Suppress("NAME_SHADOWING")
     val args = try {
-        CommandLineOptions.create(args)
+        ParsedOption.create(args)
     } catch (e: OptionException) {
         println("Error occurred during option parsing (${e.message}).${System.lineSeparator()}" +
                 "If you need some help, use -h or -?")
         exitProcess(-2)
     }
-    create(args)
+    when (args) {
+        is HelpOptions -> args.printHelp()
+        is LayersOptions -> browse(LayerBrowser(), "layers")
+        is TemplatesOptions -> browse(TemplateBrowser(), "templates")
+        is CommandLineOptions -> create(args)
+    }
+    // shutdown threadpool so we don't need to wait idle time for threads to die
+    FuelManager.instance.executor.shutdown()
 }
