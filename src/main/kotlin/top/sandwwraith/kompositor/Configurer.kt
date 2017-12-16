@@ -1,5 +1,6 @@
 package top.sandwwraith.kompositor
 
+import joptsimple.OptionException
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import joptsimple.OptionSpec
@@ -24,7 +25,6 @@ class Configurer {
         parser.allowsUnrecognizedOptions()
         createSpec = parser.accepts("create", "Template name. Can be used without double hyphen.")
                 .withRequiredArg()
-                .required()
 
         withSpec = parser.accepts("with", "Layers separated with comma and no whitespaces. Can be used without double hyphen.")
                 .withRequiredArg()
@@ -33,7 +33,6 @@ class Configurer {
 
         nameSpec = parser.accepts("called", "Name of the project. Can be used without double hyphen.")
                 .withRequiredArg()
-                .required()
 
         outdirSpec = parser.accepts("outdir", "Output directory")
                 .withRequiredArg()
@@ -78,6 +77,8 @@ class Configurer {
     }
 }
 
+class BadOptionsException : OptionException(listOf(""))
+
 sealed class ParsedOption {
     companion object {
         fun create(args: Array<String>) : ParsedOption {
@@ -92,6 +93,9 @@ sealed class ParsedOption {
 
             if (opts.has(configurer.templatesSpec))
                 return TemplateOptions()
+
+            if (!(opts.has(configurer.nameSpec) && opts.has(configurer.createSpec)))
+                throw BadOptionsException()
 
             val projectName = configurer.nameSpec.value(opts)
             val template = configurer.createSpec.value(opts)
