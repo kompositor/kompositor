@@ -86,8 +86,6 @@ class TemplateDownloader(
             return networkFileConsumer(reader, outPath)
         }
     }
-
-    data class GitHubContentElement(val type: String, val url: String, val path: String, val download_url: String?)
 }
 
 class LayerDownloader(
@@ -116,3 +114,30 @@ class LayerDownloader(
         }
     }
 }
+
+abstract class AbstractBrowserDownloader(
+        private val type: String,
+        repoPath: String
+) : AbstractGitHubContentDownloader(repoPath) {
+
+    private val result = mutableListOf<String>()
+
+    fun loadFolder(folderPath: String) = load(folderPath, jacksonDeserializerOf(), ::browseFolder)
+
+    private fun browseFolder(list: List<GitHubContentElement>) {
+        result.addAll(list.filter { it.type == type }.map { it.path })
+    }
+
+    override fun start() {
+        super.start()
+        loadFolder(contentUrl)
+    }
+
+    fun getResult(): Result<List<String>, CompositeException> = await().map { result }
+}
+
+class TemplateBrowser(repoPath: String = "kompositor/templates") : AbstractBrowserDownloader("dir", repoPath)
+
+class LayerBrowser(repoPath: String = "kompositor/layers") : AbstractBrowserDownloader("file", repoPath)
+
+data class GitHubContentElement(val type: String, val url: String, val path: String, val download_url: String?)
