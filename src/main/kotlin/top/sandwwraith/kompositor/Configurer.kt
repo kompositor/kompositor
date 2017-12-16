@@ -23,44 +23,65 @@ class Configurer {
     init {
         parser.recognizeAlternativeLongOptions(true)
         parser.allowsUnrecognizedOptions()
-        createSpec = parser.accepts("create", "Template name. Can be used without double hyphen.")
+
+        createSpec = parser.accepts(
+                "create",
+                "Template name. Can be used without double hyphen.")
                 .withRequiredArg()
 
-        withSpec = parser.accepts("with", "Layers separated with comma and no whitespaces. Can be used without double hyphen.")
+        withSpec = parser.accepts(
+                "with",
+                "Layers separated with comma and no whitespaces. Can be used without double hyphen.")
                 .withRequiredArg()
                 .describedAs("layer1,layer2,layer3")
                 .withValuesSeparatedBy(',')
 
-        nameSpec = parser.accepts("called", "Name of the project. Can be used without double hyphen.")
+        nameSpec = parser.accepts(
+                "called",
+                "Name of the project. Can be used without double hyphen.")
                 .withRequiredArg()
 
-        outdirSpec = parser.accepts("outdir", "Output directory")
+        outdirSpec = parser.accepts(
+                "outdir",
+                "Output directory")
                 .withRequiredArg()
                 .defaultsTo("Project name")
 
-        configSpec = parser.accepts("c", "Path to config")
+        configSpec = parser.accepts(
+                "c",
+                "Path to config")
                 .withRequiredArg()
 
-        varSpec = parser.accepts("V", "Optional variables starting with capital V. For example: -Vkotlin.version=1.2.10")
+        varSpec = parser.accepts(
+                "V",
+                "Optional variables starting with capital V. For example: -Vkotlin.version=1.2.10")
                 .withRequiredArg()
 
-        layersSpec = parser.accepts("layers", "List of available layers")
+        layersSpec = parser.accepts(
+                "layers",
+                "List of available layers. Can be used without double hyphen.")
 
-        templatesSpec = parser.accepts("templates", "List of available templates")
+        templatesSpec = parser.accepts(
+                "templates",
+                "List of available templates. Can be used without double hyphen.")
 
-        helpSpec = parser.acceptsAll(listOf("h", "?", "help"), "Show help")
+        helpSpec = parser.acceptsAll(
+                listOf("h", "?", "help"),
+                "Show help")
                 .forHelp()
+    }
+
+    private fun <T> MutableList<T>.addIfExists(expected: T, elem: T) {
+        val ind = this.indexOf(expected)
+        if (ind != -1) this.add(ind, elem)
     }
 
     fun parseOptions(options: Array<String>): OptionSet {
         val mOptions = options.toMutableList()
 
-        val createInd = mOptions.indexOf("create")
-        if (createInd != -1) mOptions.add(createInd, "-W")
-        val withInd = mOptions.indexOf("with")
-        if (withInd != -1) mOptions.add(withInd, "-W")
-        val calledInd = mOptions.indexOf("called")
-        if (calledInd != -1) mOptions.add(calledInd, "-W")
+        listOf("create", "with", "called", "layers", "templates").forEach {
+            mOptions.addIfExists(it, "-W")
+        }
 
         return parser.parse(*mOptions.toTypedArray())
     }
